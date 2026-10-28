@@ -129,7 +129,17 @@ nav button.mid .badge{top:-14px}
 .swipebtns button{width:58px;height:58px;border-radius:50%;background:var(--card);border:1px solid var(--line);font-size:1.3rem;font-weight:700;box-shadow:0 4px 14px var(--glow1)}
 .swipebtns .l{color:var(--warn)} .swipebtns .r{color:var(--sage)}
 .match{background:var(--sage-soft);color:var(--sage)} .diff{background:var(--accent-soft);color:var(--accent)}
-.viewer{position:fixed;inset:0;background:#000;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.memv{position:fixed;inset:0;z-index:35;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.memv .in{max-width:520px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(110px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.memv .back{align-self:flex-start;background:var(--card);border:1px solid var(--line);color:var(--fg);font-weight:600;padding:8px 14px;border-radius:99px}
+.memv .fr{max-width:440px;margin:0 auto}
+.memv h3{font-family:var(--display);font-style:italic;font-weight:400;font-size:1.8rem;line-height:1.15;margin:0;text-wrap:balance;overflow-wrap:anywhere}
+.memv .cmts{border-top:1px dashed var(--beige)}
+.memv .add-c{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.memv .add-c .mrow{max-width:520px;margin:0 auto}
+.memv .add-c input{flex:1;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:10px 14px;min-width:0}
+.ccount{font-size:.78rem;color:var(--accent);font-weight:600}
+.viewer{position:fixed;inset:0;background:#000;z-index:45;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .viewer img{max-width:100%;max-height:78vh;border-radius:12px;object-fit:contain}
 .viewer button{background:#fff;color:#000;font-weight:600;padding:10px 22px;border-radius:99px}
 .viewer p{color:#fff;margin:0;font-size:.85rem;opacity:.8}
@@ -424,6 +434,15 @@ nav button[aria-current="page"]:not(.mid)::after{content:"";width:4px;height:4px
       <button type="button" class="ghost" id="logoutBtn" hidden>Se déconnecter</button>
     </form>
   </div>
+  <div class="memv" id="memv" hidden role="dialog" aria-label="Souvenir">
+    <div class="in">
+      <button type="button" class="back" id="memvClose">‹ Retour</button>
+      <div id="memvPhoto"></div>
+      <div><h3 id="memvTitle"></h3><p class="meta" id="memvMeta" style="margin:4px 0 0"></p></div>
+      <div><span class="label">Commentaires</span><div class="cmts" id="memvCmts" style="margin-top:8px"></div></div>
+    </div>
+    <form class="add-c" id="f-memc"><div class="mrow"><input id="memc-text" type="text" placeholder="Écrire un commentaire..." autocomplete="off" enterkeyhint="send"><button class="plus" aria-label="Envoyer le commentaire">+</button></div></form>
+  </div>
   <div class="viewer" id="viewer" hidden><img id="viewerImg" alt=""><p id="viewerNote"></p><button id="viewerClose">Fermer</button></div>
 
   <div id="v-us" data-view hidden>
@@ -524,10 +543,10 @@ function simpleLi(r){return `<li class="item ${r.done?"done":""}">${r.type==="li
 const empty=t=>`<li class="empty">${t}</li>`;
 const FRAMES={land:{f:"frame-land",ar:"691/543",i:[17.6,13.62,17.05,13.47]},port:{f:"frame-port",ar:"636/896",i:[14.74,18.65,15.52,18.34]},oval:{f:"frame-oval",ar:"525/758",i:[21.3,17.48,20.24,17.1]}};
 function frameFor(m,orient){if(orient==="land")return"land";let h=0;for(const c of m.id)h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)%2?"oval":"port"}
-function memHtml(m){const cap=`<div class="cap"><strong>${esc(m.text)}</strong><div class="meta"><span>${esc(fmtDate(m.date)||"Sans date")} · ${esc(who(m.by))}</span><button class="ghost" data-del="${m.id}">Suppr.</button></div></div>`;
-  if(!m.photo)return `<article class="memory"><div class="in"><span class="date">${esc(fmtDate(m.date)||"Sans date")}</span><span>${esc(m.text)}</span><span class="meta">${esc(who(m.by))} <button class="ghost" data-del="${m.id}">Suppr.</button></span></div></article>`;
+function memHtml(m){const nc=(m.comments||[]).length;const cap=`<div class="cap"><strong>${esc(m.text)}</strong>${nc?`<span class="ccount" data-memopen="${m.id}">${nc} commentaire${nc>1?"s":""}</span>`:""}<div class="meta"><span>${esc(fmtDate(m.date)||"Sans date")} · ${esc(who(m.by))}</span><button class="ghost" data-del="${m.id}">Suppr.</button></div></div>`;
+  if(!m.photo)return `<article class="memory" data-memopen="${m.id}" style="cursor:pointer"><div class="in"><span class="date">${esc(fmtDate(m.date)||"Sans date")}</span><span>${esc(m.text)}</span><span class="meta">${esc(who(m.by))} <button class="ghost" data-del="${m.id}">Suppr.</button></span></div></article>`;
   const k=frameFor(m,m.orient||"port"),F=FRAMES[k];
-  return `<figure class="framed" data-mem="${m.id}"><div class="fr ${k}"><div class="hole" style="inset:${F.i[0]}% ${F.i[1]}% ${F.i[2]}% ${F.i[3]}%"><img src="${ndBlob(m.photo)}" data-blob="${esc(m.photo)}" alt="${esc(m.text)}" data-full="${esc(m.photo)}" data-orient="${m.orient||""}"></div><img class="gold" src="stk/${F.f}.webp" alt=""></div>${cap}</figure>`}
+  return `<figure class="framed" data-mem="${m.id}"><div class="fr ${k}"><div class="hole" style="inset:${F.i[0]}% ${F.i[1]}% ${F.i[2]}% ${F.i[3]}%"><img src="${ndBlob(m.photo)}" data-blob="${esc(m.photo)}" alt="${esc(m.text)}" data-memopen="${m.id}" data-orient="${m.orient||""}"></div><img class="gold" src="stk/${F.f}.webp" alt=""></div>${cap}</figure>`}
 document.addEventListener("load",e=>{const im=e.target;if(!im.matches||!im.matches(".hole img")||im.dataset.orient||im.naturalWidth<4)return;
   const land=im.naturalWidth>im.naturalHeight*1.1,fig=im.closest("[data-mem]"),m=items.find(x=>x.id===fig.dataset.mem);if(!m)return;
   const want=land?"land":frameFor(m,"port"),cur=fig.querySelector(".fr").classList.contains("land")?"land":"x";
@@ -679,6 +698,7 @@ function activity(){const A=[];
     if(i.edited&&i.editedBy){let t;if(i.type==="demande")t=(i.status==="accepte"?"a accepté la sortie":"n'est pas dispo pour")+` : ${esc(i.text)}`;else if(i.type==="moment")t=`a modifié son avis du ${esc(fmtDate(i.date))} : ${esc(i.note)}/10`;else if(i.type==="aimepas")t=(i.done?"a noté que vous en avez parlé":"a rouvert le sujet")+` : ${esc(i.text)}`;else if(i.type==="envie")t=(i.lastAct==="also"?"en a envie aussi":i.done?"a réalisé l'envie":"a remis l'envie")+` : ${esc(i.text)}`;else t=(i.done?"a coché":"a décoché")+` : ${esc(i.text)}`;
       A.push({by:i.editedBy,at:i.edited,t,tab:i.type==="demande"||i.type==="moment"||i.type==="envie"?"cal":i.type==="aimepas"?"us":"home"})}}
   for(const m of msgs)A.push({by:m.by,at:m.at,tab:"chat",t:m.photo||m.once?"a envoyé une photo":"a envoyé un message"});
+  for(const i of items)if(i.type==="souvenir")for(const c of i.comments||[])A.push({by:c.by,at:c.at,tab:"mem",t:`a commenté le souvenir « ${esc(i.text)} » : ${esc(c.t)}`});
   for(const q of questions){A.push({by:q.by,at:q.at,tab:"us",t:"a posé une question : "+esc(qTitle(q))});for(const c of q.comments||[])A.push({by:c.by,at:c.at,tab:"us",t:"a commenté : "+esc(c.t)})}
   for(const a of answers){const q=questions.find(x=>x.id===a.q);if(q)A.push({by:a.by,at:a.at,tab:"us",t:`a répondu « ${esc(qLabel(q,a.choice))} » à : ${esc(qTitle(q))}`})}
   return A.filter(x=>x.at).sort((a,b)=>b.at-a.at)}
@@ -705,10 +725,30 @@ function notify(title,text,tab,opts={}){
 function updateTitle(){const n=[...document.querySelectorAll("nav .badge")].reduce((s,b)=>s+(parseInt(b.textContent)||0),0);document.title=n?`(${n}) Nous Deux`:"Nous Deux"}
 const partnerName=()=>{if(nick)return nick;const id=Object.keys(names).find(k=>k!==me);return id&&names[id]!=="Ton chéri(e)"?names[id]:"Ton cœur"};
 const seenIds={items:null,messages:null,questions:null,answers:null};const bootAt=Date.now();
+// ---------- Souvenir en grand + commentaires ----------
+var openMem=null;
+function renderMemSheet(){if(!openMem)return;const m=items.find(x=>x.id===openMem);if(!m){closeMem();return}
+  const keep=$("#memc-text").value;
+  if(m.photo){const k=frameFor(m,m.orient||"port"),F=FRAMES[k];
+    $("#memvPhoto").innerHTML=`<div class="fr ${k}"><div class="hole" style="inset:${F.i[0]}% ${F.i[1]}% ${F.i[2]}% ${F.i[3]}%"><img src="${ndBlob(m.photo)}" data-blob="${esc(m.photo)}" alt="${esc(m.text)}" data-full="${esc(m.photo)}" data-orient="${m.orient||"x"}"></div><img class="gold" src="stk/${F.f}.webp" alt=""></div>`}
+  else $("#memvPhoto").innerHTML="";
+  $("#memvTitle").textContent=m.text||"Souvenir";
+  $("#memvMeta").textContent=(fmtDate(m.date)||"Sans date")+" · gardé par "+whoL(m.by);
+  const C=m.comments||[];
+  $("#memvCmts").innerHTML=C.map(c=>`<div class="cmt${c.by===me?" mine":""}"><b>${esc(who(c.by))}</b>${esc(c.t)} <span class="dt">${esc(dt(c.at))}</span></div>`).join("")||`<p class="meta" style="margin:0">Pas encore de commentaire. Écris le premier en bas.</p>`;
+  $("#memc-text").value=keep}
+function openMemSheet(id){openMem=id;$("#memv").hidden=false;$("#memv").scrollTop=0;document.body.style.overflow="hidden";renderMemSheet()}
+function closeMem(){openMem=null;$("#memv").hidden=true;document.body.style.overflow=""}
+$("#memvClose").onclick=closeMem;
+$("#f-memc").onsubmit=async e=>{e.preventDefault();const t=$("#memc-text").value.trim();if(!t||!openMem)return;
+  if(!db){status("Connecte-toi pour commenter.");return}
+  const m=items.find(x=>x.id===openMem);if(!m)return;const arr=(m.comments||[]).concat({by:me,t,at:Date.now()});$("#memc-text").value="";
+  try{await db.collection("items").doc(m.id).update({comments:arr,cAt:Date.now(),cBy:me});setTimeout(()=>{const b=$("#memvCmts");b.lastElementChild&&b.lastElementChild.scrollIntoView({behavior:"smooth",block:"center"})},80)}catch(err){$("#memc-text").value=t;status("Commentaire non enregistré.")}};
 function diffNotify(kind,docs){
   const prev=seenIds[kind];seenIds[kind]=new Map(docs.map(d=>[d.id,d]));if(prev===null)return;
   for(const d of docs){const old=prev.get(d.id);
     if(!old&&d.by&&d.by!==me){notifyNew(kind,d);continue}
+    if(kind==="items"&&old&&(d.comments||[]).length>(old.comments||[]).length){const c=d.comments[d.comments.length-1];if(c.by!==me)notify(who(c.by)+" a commenté un souvenir",(d.text?d.text+" : ":"")+c.t,"mem",{icon:"✎",after:()=>openMemSheet(d.id)});continue}
     if(kind==="questions"&&old&&(d.comments||[]).length>(old.comments||[]).length){const c=d.comments[d.comments.length-1];if(c.by!==me)notify(who(c.by)+" a commenté",c.t,"us",{icon:"✎"});continue}
     if(old&&d.editedBy&&d.editedBy!==me&&d.edited&&d.edited!==old.edited)notifyEdit(kind,d)}}
 function notifyNew(kind,d){const n=who(d.by);
@@ -754,7 +794,7 @@ function render(){
   $("#nopeList").innerHTML=F(by("aimepas")).sort((a,b)=>a.done-b.done).sort((a,b)=>b.at-a.at).map(simpleLi).join("")||`<li class="empty"><img class="stk-empty" src="stk/hearts-sketch.webp" alt="">Ce qu'on aimerait changer, dit avec douceur.</li>`;
   $("#memList").innerHTML=F(by("souvenir")).sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(memHtml).join("")||`<p class="empty" style="column-span:all"><img class="stk-empty" src="stk/hearts-red.webp" alt="">Votre premier souvenir commence ici : une date, quelques mots, une photo.</p>`;
   renderFeed();
-  renderCal();renderHome();renderGame();renderEnvies();
+  renderCal();renderHome();renderGame();renderEnvies();renderMemSheet();
   resolveNames();
 }
 async function resolveNames(){if(!user)return;const ids=[...new Set(items.flatMap(i=>[i.by,i.editedBy]).filter(Boolean))].filter(id=>!(id in names));if(!ids.length)return;try{const ps=await user.profiles(ids);let ch=false;ids.forEach(id=>{const n=(ps[id]&&ps[id].name||"").split(" ")[0];names[id]=n||"Ton chéri(e)";ch=true});if(ch)render()}catch(e){}}
@@ -786,6 +826,7 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden&&!$("#v-hom
 const pendingDel=new Set();
 document.addEventListener("click",async e=>{
   const snap=e.target.closest("[data-snap]");if(snap){const m=msgs.find(x=>x.id===snap.dataset.snap);if(m&&m.photo)openViewer(m.photo,"Cette photo disparaît quand tu fermes.",m.id);return}
+  const mo=e.target.closest("[data-memopen]");if(mo&&!e.target.closest("[data-del]")){openMemSheet(mo.dataset.memopen);return}
   const full=e.target.closest("[data-full]");if(full){openViewer(full.dataset.full);return}
   const me1=e.target.closest("[data-mledit]");if(me1){const[k,i]=me1.dataset.mledit.split(":");mlEdit[k]=+i;$("#ml-"+k).value=draft[k][+i].t;renderDraft();$("#ml-"+k).focus();return}
   const md=e.target.closest("[data-mldel]");if(md){const[k,i]=md.dataset.mldel.split(":");draft[k].splice(+i,1);delete mlEdit[k];renderDraft();return}
