@@ -1,5 +1,5 @@
 // Service worker : fonctionnement hors ligne de base + notifications push.
-const CACHE = "nous-deux-v6";
+const CACHE = "nous-deux-v7";
 const SHELL = ["./", "index.html", "backend.js", "config.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {

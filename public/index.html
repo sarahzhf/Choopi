@@ -217,7 +217,7 @@ nav button[aria-current="page"]:not(.mid)::after{content:"";width:4px;height:4px
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
 .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .qmake{display:flex;flex-direction:column;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px;box-shadow:0 8px 20px -16px var(--shadow)}
-.qmake input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0;width:100%}
+.qmake input{box-sizing:border-box;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0;width:100%}
 .qmake .or{font-family:var(--hand);font-size:1.3rem;color:var(--accent);text-align:center;margin:-4px 0}
 .cmts{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
 .cmt{font-size:.88rem;background:var(--bg);border-radius:12px;padding:6px 10px;align-self:flex-start;max-width:100%;overflow-wrap:anywhere}
@@ -647,7 +647,8 @@ $("#f-chat").onsubmit=async e=>{e.preventDefault();setTyping(false);const text=$
   try{await db.collection("messages").add({text,photo,once:!!photo&&onceOn,viewed:false,by:me,at:Date.now()});$("#chat-text").value="";$("#clearPhoto").click()}catch(err){status("Message non envoyé ("+(err.code||"erreur")+").")}};
 var questions=[],answers=[],dragging=false,qKind="duel";
 const qLabel=(q,c)=>q.kind==="aime"?(c==="b"?"Oui":"Non"):(c==="b"?q.b:q.a);
-const qTitle=q=>q.kind==="aime"?"Est-ce que tu aimes "+q.text+" ?":"Tu préfères "+q.a+" ou "+q.b+" ?";
+const lc=t=>{t=String(t||"");return /^[A-ZÀ-Ý][a-zà-ÿ]/.test(t)?t[0].toLowerCase()+t.slice(1):t};
+const qTitle=q=>q.kind==="aime"?"Est-ce que tu aimes "+lc(q.text)+" ?":"Tu préfères "+lc(q.a)+" ou "+lc(q.b)+" ?";
 function cmtsHtml(q){return `<div class="cmts">${(q.comments||[]).map(c=>`<div class="cmt${c.by===me?" mine":""}"><b>${esc(who(c.by))}</b>${esc(c.t)} <span class="dt">${esc(dt(c.at))}</span></div>`).join("")}<div class="mrow"><input type="text" data-cin="${q.id}" placeholder="Ajouter un commentaire" enterkeyhint="send" autocomplete="off"><button type="button" class="plus" data-cadd="${q.id}" aria-label="Envoyer le commentaire">+</button></div></div>`}
 function renderGame(){
   if(dragging)return;
@@ -657,7 +658,7 @@ function renderGame(){
   const todo=his.filter(q=>!mineAns.has(q.id)),top=todo.slice(0,3);
   badge("us",todo.length);
   $("#swipebtns").hidden=!top.length;
-  $("#stack").innerHTML=top.map((q,i)=>`<div class="qcard ${i?"back"+i:""}" data-q="${q.id}">${i?"":'<img class="spk" src="stk/sparkle.webp" alt="">'}<span class="kind">${q.kind==="aime"?"Est-ce que tu aimes":"Tu préfères"}</span><h3>${esc(q.kind==="aime"?q.text+" ?":q.a+" ou "+q.b+" ?")}</h3><span class="from">Question de ${esc(who(q.by))} · ${esc(dt(q.at))}</span><span class="stamp l">${esc(qLabel(q,"a"))}</span><span class="stamp r">${esc(qLabel(q,"b"))}</span><div class="sides"><span class="l">‹ ${esc(qLabel(q,"a"))}</span><span class="r">${esc(qLabel(q,"b"))} ›</span></div></div>`).reverse().join("")||`<p class="empty" style="margin:0;position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center"><img class="stk-empty" src="stk/hearts-outline.webp" alt="">${his.length?"Tu as répondu à toutes les questions de ${esc(partnerName())}.":"Pas encore de question de ${esc(partnerName())}."}<br>Les nouvelles apparaîtront ici.</p>`;
+  $("#stack").innerHTML=top.map((q,i)=>`<div class="qcard ${i?"back"+i:""}" data-q="${q.id}">${i?"":'<img class="spk" src="stk/sparkle.webp" alt="">'}<span class="kind">${q.kind==="aime"?"Est-ce que tu aimes":"Tu préfères"}</span><h3>${esc(q.kind==="aime"?q.text+" ?":q.a+" ou "+q.b+" ?")}</h3><span class="from">Question de ${esc(who(q.by))} · ${esc(dt(q.at))}</span><span class="stamp l">${esc(qLabel(q,"a"))}</span><span class="stamp r">${esc(qLabel(q,"b"))}</span><div class="sides"><span class="l">‹ ${esc(qLabel(q,"a"))}</span><span class="r">${esc(qLabel(q,"b"))} ›</span></div></div>`).reverse().join("")||`<p class="empty" style="margin:0;position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center"><img class="stk-empty" src="stk/hearts-outline.webp" alt="">${his.length?"Tu as répondu à toutes les questions de "+esc(partnerName())+".":"Pas encore de question de "+esc(partnerName())+"."}<br>Les nouvelles apparaîtront ici.</p>`;
   const el=$("#stack .qcard:not(.back1):not(.back2)");if(el)bindCard(el,todo[0]);
   const mine=questions.filter(q=>q.by===me).sort((a,b)=>b.at-a.at);
   $("#myQs").innerHTML=mine.map(q=>{const a=answers.find(x=>x.q===q.id&&x.by!==me);
