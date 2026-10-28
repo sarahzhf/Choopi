@@ -274,7 +274,7 @@ nav button[aria-current="page"]:not(.mid)::after{content:"";width:4px;height:4px
 <div class="wrap">
   <header class="top">
     <img class="logo" src="stk/puzzle.webp" alt="Deux pièces de puzzle, toi et moi">
-    <div><h1>Nous Deux</h1><p class="hand" id="hello">notre petit coin à deux</p><button type="button" class="rename" id="renameBtn" hidden>✎ <span class="pname">Mon cœur</span></button></div>
+    <div><h1>Nous Deux</h1><p class="hand" id="hello">Notre petit coin à nous deux</p><button type="button" class="rename" id="renameBtn" hidden>✎ <span class="pname">Mon cœur</span></button></div>
   </header>
   <header>
     <p class="sync" id="sync"><span class="pd"></span><span id="syncText">Chargement de vos données...</span></p>
@@ -485,11 +485,6 @@ nav button[aria-current="page"]:not(.mid)::after{content:"";width:4px;height:4px
 </nav>
 
 <script src="config.js"></script>
-<script>
-(function(){var M=["notre petit coin à deux","toi et moi, c'est le plan","un peu de nous, chaque jour","ici, tout est à deux","on se garde une place","deux cœurs, un même endroit","on écrit notre histoire","doucement, ensemble"];
-var d=new Date(),i=(d.getFullYear()*372+d.getMonth()*31+d.getDate())%M.length;
-document.addEventListener("DOMContentLoaded",function(){var h=document.getElementById("hello");if(h)h.textContent=M[i]})})();
-</script>
 <script src="backend.js"></script>
 <script>
 const $=s=>document.querySelector(s);
