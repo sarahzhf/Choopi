@@ -81,6 +81,7 @@ details.box textarea{min-height:54px;resize:vertical}
 .dt{font-size:.72rem;color:var(--muted);white-space:nowrap}
 .mlist .x{background:transparent;color:var(--muted);padding:0 4px;font-size:1rem}
 .mini{margin-top:4px}
+.mtitle{font-family:var(--display);font-style:italic;font-size:1.35rem;line-height:1.2;color:var(--fg);margin-bottom:6px;overflow-wrap:anywhere}
 .mgroup{margin-top:10px;font-size:.85rem;color:var(--muted);font-weight:600}
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .yes{background:var(--sage);color:var(--bg);font-weight:600;padding:8px 14px}
@@ -355,6 +356,7 @@ nav button[aria-current="page"]:not(.mid)::after{content:"";width:4px;height:4px
       <details class="box" id="d-moment">
         <summary>On s'est vus ce jour-là</summary>
         <form id="f-moment">
+          <label>Titre<input id="m-title" type="text" maxlength="80" placeholder="Ex : resto italien puis balade sur les quais" autocomplete="off"></label>
           <label>Note du moment<div class="rangerow"><input id="m-note" type="range" min="1" max="10" value="8"><span class="score" id="m-noteOut">8/10</span></div></label>
           <div class="ml" data-key="bien"><span class="mlab">Ce qui allait</span><ul class="mlist"></ul><div class="mrow"><input id="ml-bien" type="text" placeholder="Ex : on a beaucoup ri au resto" enterkeyhint="done"><button type="button" class="plus" aria-label="Ajouter">+</button></div></div>
           <div class="ml" data-key="pasbien"><span class="mlab">Ce qui n'allait pas</span><ul class="mlist"></ul><div class="mrow"><input id="ml-pasbien" type="text" placeholder="Écris puis appuie sur Entrée" enterkeyhint="done"><button type="button" class="plus" aria-label="Ajouter">+</button></div></div>
@@ -544,7 +546,7 @@ const MKEYS=[["bien","Ce qui allait"],["pasbien","Ce qui n'allait pas"],["manque
 const asList=v=>Array.isArray(v)?v:(v?[{t:String(v),at:0}]:[]);
 const dt=ts=>ts?new Date(ts).toLocaleString("fr-FR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
 function momentLi(m){const parts=MKEYS.map(([k,l])=>{const L=asList(m[k]);return L.length?`<div class="mgroup">${l}</div><ul class="mini">${L.map(x=>`<li><span class="tx">${esc(x.t)}</span><span class="dt">${esc(dt(x.at))}</span></li>`).join("")}</ul>`:""}).join("");
-  return `<li class="item"><div class="txt"><div class="listhead"><strong>${m.by===me?"Ton avis":"Avis de "+esc(who(m.by))}</strong><span class="score">${esc(m.note)}/10</span></div>${parts}${m.by===me?`<div class="btns"><button class="ghost" data-editm="${m.id}">Modifier</button><button class="ghost" data-del="${m.id}">Suppr.</button></div>`:""}</div></li>`}
+  return `<li class="item"><div class="txt">${m.title?`<div class="mtitle">${esc(m.title)}</div>`:""}<div class="listhead"><strong>${m.by===me?"Ton avis":"Avis de "+esc(who(m.by))}</strong><span class="score">${esc(m.note)}/10</span></div>${parts}${m.by===me?`<div class="btns"><button class="ghost" data-editm="${m.id}">Modifier</button><button class="ghost" data-del="${m.id}">Suppr.</button></div>`:""}</div></li>`}
 var draft={bien:[],pasbien:[],manque:[],ameliorer:[]},mlEdit={},editingMoment=null;
 function renderDraft(){document.querySelectorAll(".ml").forEach(box=>{const k=box.dataset.key;
   box.querySelector(".mlist").innerHTML=draft[k].map((x,i)=>`<li class="${mlEdit[k]===i?"editing":""}"><span class="tx" data-mledit="${k}:${i}" title="Toucher pour modifier">${esc(x.t)}</span><span class="dt">${esc(dt(x.at))}</span><button type="button" class="x" data-mldel="${k}:${i}" aria-label="Retirer">×</button></li>`).join("")})}
@@ -554,7 +556,7 @@ function mlAdd(k){const inp=$("#ml-"+k),v=inp.value.trim();if(!v)return;
 document.querySelectorAll(".ml").forEach(box=>{const k=box.dataset.key,inp=box.querySelector("input");
   inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();mlAdd(k)}});
   box.querySelector(".plus").onclick=()=>mlAdd(k)});
-function resetMomentForm(){draft={bien:[],pasbien:[],manque:[],ameliorer:[]};mlEdit={};editingMoment=null;MKEYS.forEach(([k])=>$("#ml-"+k).value="");$("#m-note").value=8;$("#m-noteOut").textContent="8/10";$("#m-save").textContent="Enregistrer ce moment";$("#m-cancel").hidden=true;renderDraft()}
+function resetMomentForm(){draft={bien:[],pasbien:[],manque:[],ameliorer:[]};mlEdit={};editingMoment=null;$("#m-title").value="";MKEYS.forEach(([k])=>$("#ml-"+k).value="");$("#m-note").value=8;$("#m-noteOut").textContent="8/10";$("#m-save").textContent="Enregistrer ce moment";$("#m-cancel").hidden=true;renderDraft()}
 $("#m-cancel").onclick=()=>{resetMomentForm();$("#d-moment").open=false};
 function renderCal(){
   const y=calM.getFullYear(),m=calM.getMonth(),t=todayStr();
@@ -673,7 +675,7 @@ let cacheT=null;function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>
 function activity(){const A=[];
   const VB={rappel:"a ajouté un rappel",liste:"a ajouté à une liste",aime:"aime",aimepas:"aimerait en parler",souvenir:"a gardé un souvenir",envie:"a une envie"};
   for(const i of items){A.push({by:i.by,at:i.at,tab:i.type==="souvenir"?"mem":i.type==="moment"||i.type==="demande"||i.type==="envie"?"cal":i.type==="aime"||i.type==="aimepas"?"us":"home",
-      t:i.type==="moment"?`a noté votre moment du ${esc(fmtDate(i.date))} : ${esc(i.note)}/10`:i.type==="demande"?`propose une sortie : ${esc(i.text)} (${esc(fmtDate(i.date))})`:`${VB[i.type]||"a ajouté"} : ${esc(i.text)}`});
+      t:i.type==="moment"?`a noté votre moment${i.title?" « "+esc(i.title)+" »":""} du ${esc(fmtDate(i.date))} : ${esc(i.note)}/10`:i.type==="demande"?`propose une sortie : ${esc(i.text)} (${esc(fmtDate(i.date))})`:`${VB[i.type]||"a ajouté"} : ${esc(i.text)}`});
     if(i.edited&&i.editedBy){let t;if(i.type==="demande")t=(i.status==="accepte"?"a accepté la sortie":"n'est pas dispo pour")+` : ${esc(i.text)}`;else if(i.type==="moment")t=`a modifié son avis du ${esc(fmtDate(i.date))} : ${esc(i.note)}/10`;else if(i.type==="aimepas")t=(i.done?"a noté que vous en avez parlé":"a rouvert le sujet")+` : ${esc(i.text)}`;else if(i.type==="envie")t=(i.lastAct==="also"?"en a envie aussi":i.done?"a réalisé l'envie":"a remis l'envie")+` : ${esc(i.text)}`;else t=(i.done?"a coché":"a décoché")+` : ${esc(i.text)}`;
       A.push({by:i.editedBy,at:i.edited,t,tab:i.type==="demande"||i.type==="moment"||i.type==="envie"?"cal":i.type==="aimepas"?"us":"home"})}}
   for(const m of msgs)A.push({by:m.by,at:m.at,tab:"chat",t:m.photo||m.once?"a envoyé une photo":"a envoyé un message"});
@@ -713,13 +715,13 @@ function notifyNew(kind,d){const n=who(d.by);
   if(kind==="messages")return $("#v-chat").hidden&&notify(n+" t'a écrit",d.once?"Une photo à voir une fois":d.photo?"Une photo":d.text,"chat",{icon:"✉"});
   if(kind==="questions")return notify(n+" te pose une question",d.kind==="aime"?"Est-ce que tu aimes "+d.text+" ?":d.a+" ou "+d.b+" ?","us",{icon:"⇆"});
   if(kind==="answers"){const q=questions.find(x=>x.id===d.q);return q&&q.by===me&&notify(n+" a répondu",qTitle(q)+" "+qLabel(q,d.choice),"us",{icon:"⇆"})}
-  const M={rappel:["Nouveau rappel",d.text+" ("+forLabel(d)+")","home","⏰"],liste:["Ajout à la liste "+(d.list||""),d.text,"home","✓"],aime:[n+" aime",d.text,"us","♥"],aimepas:[n+" aimerait en parler",d.text,"us","…"],souvenir:["Nouveau souvenir",d.text,"mem","◎"],envie:[n+" a une envie",(ECAT[d.cat]||"")+" : "+d.text,"cal","✦"],moment:[n+" a noté votre moment",d.note+"/10, le "+fmtDate(d.date),"cal","★"],demande:[n+" te propose une sortie",d.text+", "+fmtDate(d.date)+(d.time?" à "+d.time:""),"home","+"]};
+  const M={rappel:["Nouveau rappel",d.text+" ("+forLabel(d)+")","home","⏰"],liste:["Ajout à la liste "+(d.list||""),d.text,"home","✓"],aime:[n+" aime",d.text,"us","♥"],aimepas:[n+" aimerait en parler",d.text,"us","…"],souvenir:["Nouveau souvenir",d.text,"mem","◎"],envie:[n+" a une envie",(ECAT[d.cat]||"")+" : "+d.text,"cal","✦"],moment:[n+" a noté votre moment",(d.title?d.title+", ":"")+d.note+"/10, le "+fmtDate(d.date),"cal","★"],demande:[n+" te propose une sortie",d.text+", "+fmtDate(d.date)+(d.time?" à "+d.time:""),"home","+"]};
   const x=M[d.type];if(x)notify(x[0],x[1],x[2],{icon:x[3],after:d.type==="moment"?()=>{selDay=d.date;renderCal()}:null})}
 function notifyEdit(kind,d){const n=who(d.editedBy);
   if(kind==="messages")return;
   if(d.type==="demande")return notify(d.status==="accepte"?n+" a dit oui":n+" n'est pas dispo",d.text+", "+fmtDate(d.date),"cal",{icon:d.status==="accepte"?"✓":"×",after:()=>{selDay=d.date;calM=new Date(d.date+"T12:00");calM.setDate(1);renderCal()}});
   if(d.type==="rappel"&&d.done)return notify(n+" a fait un rappel",d.text,"home",{icon:"✓"});
-  if(d.type==="moment")return notify(n+" a modifié son avis",fmtDate(d.date)+" : "+d.note+"/10","cal",{icon:"★"});
+  if(d.type==="moment")return notify(n+" a modifié son avis",(d.title?d.title+", ":"")+fmtDate(d.date)+" : "+d.note+"/10","cal",{icon:"★"});
   if(d.type==="envie")return notify(d.lastAct==="also"?n+" en a envie aussi":d.done?n+" a coché une envie":n+" a remis une envie",d.text,"cal",{icon:"✦",after:()=>setTimeout(()=>$("#envies").scrollIntoView({behavior:"smooth"}),80)});
   if(d.type==="aimepas"&&d.done)return notify(n+" a noté que vous en avez parlé",d.text,"us",{icon:"✓"})}
 // Rappels qui sonnent à l'heure (quand l'appli est ouverte)
@@ -771,7 +773,7 @@ $("#f-mem").onsubmit=async e=>{e.preventDefault();let photo=null;const f=$("#mem
 
 $("#m-note").oninput=e=>$("#m-noteOut").textContent=e.target.value+"/10";
 $("#f-moment").onsubmit=async e=>{e.preventDefault();MKEYS.forEach(([k])=>mlAdd(k));
-  const data={note:+$("#m-note").value,bien:draft.bien,pasbien:draft.pasbien,manque:draft.manque,ameliorer:draft.ameliorer};
+  const data={title:$("#m-title").value.trim(),note:+$("#m-note").value,bien:draft.bien,pasbien:draft.pasbien,manque:draft.manque,ameliorer:draft.ameliorer};
   if(editingMoment){if(!db)return;try{await db.collection("items").doc(editingMoment).update({...data,edited:Date.now(),editedBy:me});resetMomentForm();$("#d-moment").open=false}catch(err){status("Modification non enregistrée.")}return}
   if(await add({type:"moment",date:selDay,text:"moment ensemble",...data})){resetMomentForm();$("#d-moment").open=false}};
 $("#f-req").onsubmit=async e=>{e.preventDefault();
@@ -788,7 +790,7 @@ document.addEventListener("click",async e=>{
   const me1=e.target.closest("[data-mledit]");if(me1){const[k,i]=me1.dataset.mledit.split(":");mlEdit[k]=+i;$("#ml-"+k).value=draft[k][+i].t;renderDraft();$("#ml-"+k).focus();return}
   const md=e.target.closest("[data-mldel]");if(md){const[k,i]=md.dataset.mldel.split(":");draft[k].splice(+i,1);delete mlEdit[k];renderDraft();return}
   const em=e.target.closest("[data-editm]");if(em){const m=items.find(x=>x.id===em.dataset.editm);if(!m)return;
-    resetMomentForm();editingMoment=m.id;MKEYS.forEach(([k])=>draft[k]=asList(m[k]).map(x=>({...x})));$("#m-note").value=m.note||8;$("#m-noteOut").textContent=(m.note||8)+"/10";
+    resetMomentForm();editingMoment=m.id;$("#m-title").value=m.title||"";MKEYS.forEach(([k])=>draft[k]=asList(m[k]).map(x=>({...x})));$("#m-note").value=m.note||8;$("#m-noteOut").textContent=(m.note||8)+"/10";
     $("#m-save").textContent="Enregistrer les modifications";$("#m-cancel").hidden=false;renderDraft();$("#d-moment").open=true;$("#d-moment").scrollIntoView({behavior:"smooth",block:"start"});return}
   const af=e.target.closest("[data-af]");if(af){fAuthor=af.dataset.af;try{localStorage.setItem("fAuthor",fAuthor)}catch(e){}render();return}
   const ca=e.target.closest("[data-cadd]");if(ca){addComment(ca.dataset.cadd);return}
