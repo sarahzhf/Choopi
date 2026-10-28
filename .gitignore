@@ -1,0 +1,6 @@
+.DS_Store
+*.zip
+# Fichiers avec secrets : jamais sur GitHub
+telephone/cron.sql
+telephone/webhook.sql
+supabase/.temp/
