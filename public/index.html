@@ -138,6 +138,8 @@ nav button.mid .badge{top:-14px}
 .memv .add-c{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .memv .add-c .mrow{max-width:520px;margin:0 auto}
 .memv .add-c input{flex:1;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:10px 14px;min-width:0}
+.dline{display:inline-flex;align-items:center;gap:8px;font-size:.88rem;color:var(--muted);font-weight:500;flex-wrap:wrap}
+.dline input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 10px;min-height:36px;min-width:150px}
 .ccount{font-size:.78rem;color:var(--accent);font-weight:600}
 .viewer{position:fixed;inset:0;background:#000;z-index:45;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .viewer img{max-width:100%;max-height:78vh;border-radius:12px;object-fit:contain}
@@ -438,7 +440,8 @@ nav button[aria-current="page"]:not(.mid)::after{content:"";width:4px;height:4px
     <div class="in">
       <button type="button" class="back" id="memvClose">‹ Retour</button>
       <div id="memvPhoto"></div>
-      <div><h3 id="memvTitle"></h3><p class="meta" id="memvMeta" style="margin:4px 0 0"></p></div>
+      <div><h3 id="memvTitle"></h3><p class="meta" id="memvMeta" style="margin:4px 0 0"></p>
+        <label class="dline" style="margin-top:10px">C'était le <input id="memv-date" type="date" aria-label="Date du souvenir"></label></div>
       <div><span class="label">Commentaires</span><div class="cmts" id="memvCmts" style="margin-top:8px"></div></div>
     </div>
     <form class="add-c" id="f-memc"><div class="mrow"><input id="memc-text" type="text" placeholder="Écrire un commentaire..." autocomplete="off" enterkeyhint="send"><button class="plus" aria-label="Envoyer le commentaire">+</button></div></form>
@@ -487,7 +490,7 @@ nav button[aria-current="page"]:not(.mid)::after{content:"";width:4px;height:4px
       <div class="titled"><h2>Nos souvenirs</h2><img class="st" src="stk/vinyl.webp" alt=""></div>
       <form class="add" id="f-mem">
         <input id="mem-text" type="text" placeholder="Ex : notre premier resto à Montmartre" required>
-        <input id="mem-date" type="date" aria-label="Date du souvenir">
+        <label class="dline">C'était le <input id="mem-date" type="date" aria-label="Date du souvenir"></label>
         <input id="mem-photo" type="file" accept="image/*" aria-label="Photo" style="flex:1 1 100%">
         <button class="primary">Garder ce souvenir</button>
       </form>
@@ -733,13 +736,15 @@ function renderMemSheet(){if(!openMem)return;const m=items.find(x=>x.id===openMe
     $("#memvPhoto").innerHTML=`<div class="fr ${k}"><div class="hole" style="inset:${F.i[0]}% ${F.i[1]}% ${F.i[2]}% ${F.i[3]}%"><img src="${ndBlob(m.photo)}" data-blob="${esc(m.photo)}" alt="${esc(m.text)}" data-full="${esc(m.photo)}" data-orient="${m.orient||"x"}"></div><img class="gold" src="stk/${F.f}.webp" alt=""></div>`}
   else $("#memvPhoto").innerHTML="";
   $("#memvTitle").textContent=m.text||"Souvenir";
-  $("#memvMeta").textContent=(fmtDate(m.date)||"Sans date")+" · gardé par "+whoL(m.by);
+  $("#memvMeta").textContent="Gardé par "+whoL(m.by)+" le "+dt(m.at);
+  if(document.activeElement!==$("#memv-date"))$("#memv-date").value=m.date||"";
   const C=m.comments||[];
   $("#memvCmts").innerHTML=C.map(c=>`<div class="cmt${c.by===me?" mine":""}"><b>${esc(who(c.by))}</b>${esc(c.t)} <span class="dt">${esc(dt(c.at))}</span></div>`).join("")||`<p class="meta" style="margin:0">Pas encore de commentaire. Écris le premier en bas.</p>`;
   $("#memc-text").value=keep}
 function openMemSheet(id){openMem=id;$("#memv").hidden=false;$("#memv").scrollTop=0;document.body.style.overflow="hidden";renderMemSheet()}
 function closeMem(){openMem=null;$("#memv").hidden=true;document.body.style.overflow=""}
 $("#memvClose").onclick=closeMem;
+$("#memv-date").onchange=async e=>{if(!openMem||!db)return;const v=e.target.value||null;try{await db.collection("items").doc(openMem).update({date:v});status(v?"Date enregistrée : "+fmtDate(v)+".":"Date retirée.");setTimeout(()=>status(""),2500)}catch(err){status("Date non enregistrée.")}};
 $("#f-memc").onsubmit=async e=>{e.preventDefault();const t=$("#memc-text").value.trim();if(!t||!openMem)return;
   if(!db){status("Connecte-toi pour commenter.");return}
   const m=items.find(x=>x.id===openMem);if(!m)return;const arr=(m.comments||[]).concat({by:me,t,at:Date.now()});$("#memc-text").value="";
