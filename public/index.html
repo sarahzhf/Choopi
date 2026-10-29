@@ -427,6 +427,7 @@ nav button[aria-current="page"]:not(.mid)::after{content:"";width:4px;height:4px
       <p id="onbText">Avant d'entrer dans Nous Deux : comment veux-tu renommer ton partenaire ?</p>
       <input id="onb-name" type="text" maxlength="30" placeholder="Ex : Mon cœur" autocomplete="off" required>
       <div class="chips"><button type="button" data-nk="Mon cœur">Mon cœur</button><button type="button" data-nk="Bébé">Bébé</button><button type="button" data-nk="Mon amour">Mon amour</button><button type="button" data-nk="Chéri(e)">Chéri(e)</button></div>
+      <p class="meta" id="onbPartner" hidden style="margin:0;text-align:center;line-height:1.4"></p>
       <div id="onbInvite" hidden style="display:flex;flex-direction:column;gap:8px;width:100%">
         <p style="margin-top:6px">Et son adresse e-mail, pour qu'il ou elle puisse se connecter à son tour :</p>
         <input id="onb-email" type="email" inputmode="email" autocomplete="off" placeholder="son.adresse@exemple.com">
@@ -868,8 +869,12 @@ document.addEventListener("click",async e=>{
 // ---------- Accueil : renommer son partenaire ----------
 function openOnb(edit){$("#onbTitle").textContent=edit?"Renommer":"Bienvenue";$("#onbText").textContent=edit?"Comment veux-tu appeler ton partenaire dans l'appli ?":"Avant d'entrer dans Nous Deux : comment veux-tu renommer ton partenaire ?";
   $("#onb-name").value=edit?(nick||""):"";$("#onbGo").textContent=edit?"Enregistrer":"Entrer dans l'appli";$("#onbCancel").hidden=!edit;$("#logoutBtn").hidden=!edit;$("#onbErr").hidden=true;$("#onb").hidden=false;
-  $("#onbInvite").hidden=true;$("#onb-email").required=false;
-  if(window.ndMembers)window.ndMembers().then(list=>{if(list&&list.length<2){$("#onbInvite").hidden=false;$("#onb-email").required=!edit}}).catch(()=>{});setTimeout(()=>$("#onb-name").focus(),50)}
+  $("#onbInvite").hidden=true;$("#onb-email").required=false;$("#onbPartner").hidden=true;
+  if(window.ndMembers)window.ndMembers().then(list=>{if(!list)return;
+    if(list.length<2){$("#onbInvite").hidden=false;$("#onb-email").required=!edit;return}
+    const o=list.find(x=>x.user_id!==me)||list[1];
+    $("#onbPartner").textContent=o.user_id?"Son compte : "+o.email+" · connecté(e) ♥":"Adresse invitée : "+o.email+" · en attente de sa première connexion";
+    $("#onbPartner").hidden=false}).catch(()=>{});setTimeout(()=>$("#onb-name").focus(),50)}
 function applyNick(){$("#renameBtn").hidden=!nick;render();if(db)synced();renderChat(false);if(typeof renderPresence==="function")renderPresence()}
 $("#renameBtn").onclick=()=>openOnb(true);
 $("#onbCancel").onclick=()=>{$("#onb").hidden=true};
