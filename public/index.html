@@ -187,8 +187,9 @@ ul.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 @media (max-width:560px){.cols{grid-template-columns:1fr}}
 .cols>div{display:flex;flex-direction:column;gap:10px;min-width:0}
 .love h2{color:var(--accent)} .nope h2{color:var(--muted)}
-.memories{columns:2;column-gap:14px}
-@media (min-width:560px){.memories{columns:3}}
+.memories{display:flex;gap:14px;align-items:flex-start}
+.memories>.mcol{flex:1;min-width:0;display:flex;flex-direction:column}
+.memories>.empty{flex:1}
 .framed{break-inside:avoid;margin:0 0 18px;display:flex;flex-direction:column;gap:6px}
 .fr{position:relative;width:100%}
 .fr::before{content:"";position:absolute;inset:12% 10%;background:var(--beige);filter:blur(18px);opacity:.7;z-index:0}
@@ -798,7 +799,9 @@ function render(){
   $("#lists").innerHTML=Object.entries(lists).map(([n,arr])=>`<div style="display:flex;flex-direction:column;gap:8px"><div class="listhead"><span class="label">${esc(n)}</span><span class="meta">${arr.filter(a=>a.done).length}/${arr.length}</span></div><ul class="items">${arr.sort((a,b)=>(a.done-b.done)||(b.at-a.at)).map(simpleLi).join("")}</ul></div>`).join("")||`<p class="empty">Aucune liste pour l'instant. Écrivez un premier élément et donnez un nom à la liste : films, courses, idées de sorties...</p>`;
   $("#loveList").innerHTML=F(by("aime")).sort((a,b)=>b.at-a.at).map(simpleLi).join("")||empty("Les petites choses qui font plaisir.");
   $("#nopeList").innerHTML=F(by("aimepas")).sort((a,b)=>a.done-b.done).sort((a,b)=>b.at-a.at).map(simpleLi).join("")||`<li class="empty"><img class="stk-empty" src="stk/hearts-sketch.webp" alt="">Ce qu'on aimerait changer, dit avec douceur.</li>`;
-  $("#memList").innerHTML=F(by("souvenir")).sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(memHtml).join("")||`<p class="empty" style="column-span:all"><img class="stk-empty" src="stk/hearts-red.webp" alt="">Votre premier souvenir commence ici : une date, quelques mots, une photo.</p>`;
+  {const mems=F(by("souvenir")).sort((a,b)=>(b.date?1:0)-(a.date?1:0)||(b.date||"").localeCompare(a.date||"")||(b.at||0)-(a.at||0));
+   const nc=window.innerWidth>=560?3:2,cols=Array.from({length:nc},()=>[]);mems.forEach((m,i)=>cols[i%nc].push(memHtml(m)));
+   $("#memList").innerHTML=mems.length?cols.map(c=>`<div class="mcol">${c.join("")}</div>`).join(""):`<p class="empty"><img class="stk-empty" src="stk/hearts-red.webp" alt="">Votre premier souvenir commence ici : une date, quelques mots, une photo.</p>`}
   renderFeed();
   renderCal();renderHome();renderGame();renderEnvies();renderMemSheet();
   resolveNames();
